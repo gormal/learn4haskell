@@ -643,7 +643,7 @@ specifying complex expressions.
 -}
 
 sumLast2 :: Int -> Int
-sumLast2 n = lastDigit n + secondLastDigit n
+sumLast2 n = lastDigit (abs n) + secondLastDigit (abs n)
   where
     secondLastDigit :: Int -> Int
     secondLastDigit x =
@@ -670,7 +670,7 @@ aren't ready for this boss yet!
 -}
 firstDigit :: Int -> Int
 firstDigit n 
-  | abs n < 10 = n
+  | abs n < 10 = abs n
   | otherwise = firstDigit (div (abs n) 10)
 
 
