@@ -214,7 +214,7 @@ True :: Bool
 >>> :t 'a'
 'a' :: Char
 >>> :t 42
-42 :: Num a => a
+42 :: Num p => p
 
 A pair of boolean and char:
 >>> :t (True, 'x')
@@ -492,7 +492,7 @@ Implement a function that returns the last digit of a given number.
 -}
 -- DON'T FORGET TO SPECIFY THE TYPE IN HERE
 lastDigit :: Int -> Int
-lastDigit n = mod n  10
+lastDigit n = mod (abs n)  10
 
 
 {- |
@@ -522,7 +522,7 @@ branches because it is an expression and it must always return some value.
   satisfying the check will be returned and, therefore, evaluated.
 -}
 closestToZero :: Int -> Int -> Int
-closestToZero x y = min (abs x) (abs y)
+closestToZero x y = if (abs x) < (abs y) then x else y
 
 
 {- |
@@ -558,10 +558,10 @@ Casual reminder about adding top-level type signatures for all functions :)
 
 mid :: Int -> Int -> Int-> Int
 mid x y z
-  | x > y && y > z = y
-  | z > y && y > x = y
-  | y > x && x > z = x
-  | z > x && x > y = x
+  | x >= y && y >= z = y
+  | z >= y && y >= x = y
+  | y >= x && x >= z = x
+  | z >= x && x >= y = x
   | otherwise = z
 
 {- |
