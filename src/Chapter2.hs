@@ -800,12 +800,15 @@ mastered the skill of eta-reducing.
 divideTenBy :: Int -> Int
 divideTenBy x = div 10 x
 
--- TODO: type ;)
+listElementsLessThan :: Ord a => a -> [a] -> [a]
 listElementsLessThan x l = filter (< x) l
 
 -- Can you eta-reduce this one???
+pairMul :: Num a => [a] -> [a] -> [a]
 pairMul xs ys = zipWith (*) xs ys
 
+pairMulBy10 :: Num a => [a] -> [a]
+pairMulBy10 xs = pairMul xs (replicate (length xs) 10)
 {- |
 =🛡= Lazy evaluation
 
@@ -859,7 +862,12 @@ list.
 
 🕯 HINT: Use the 'cycle' function
 -}
-rotate = error "rotate: Not implemented!"
+rotate :: Int -> [a] -> [a]
+rotate _ [] = []
+rotate x l
+ | x < 0 = []
+ | otherwise = take (length l) (drop x (cycle l))
+
 
 {- |
 =💣= Task 12*
@@ -875,7 +883,10 @@ and reverses it.
   function, but in this task, you need to implement it manually. No
   cheating!
 -}
-rewind = error "rewind: Not Implemented!"
+rewind :: [a] -> [a]
+rewind [] = []
+rewind (x:xs) = rewind xs ++ [x]
+
 
 
 {-
