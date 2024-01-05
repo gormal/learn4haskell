@@ -1,69 +1,54 @@
-{-# LANGUAGE GADTs #-}
+module Battle where
 
--- Import necessary modules
-import Data.List (cycle)
-
--- Define a typeclass for common fighter properties
+-- Define a typeclass for fighters
 class Fighter a where
-  -- Function to get the current health of the fighter
-  getHealth :: a -> Int
-  -- Function to apply damage to the fighter
-  applyDamage :: Int -> a -> a
-  -- Function to check if the fighter is still alive
-  isAlive :: a -> Bool
-  isAlive fighter = getHealth fighter > 0
-  -- Function to perform the next action in the sequence
-  nextAction :: a -> (a, Action)
+    getName :: a -> String
+    getHealth :: a -> Int
+    getAttack :: a -> Int
+    performAction :: Fighter b => a -> b -> a
 
--- Define the actions available to fighters
-data Action = Attack Int | DrinkPotion Int | CastSpell Int | RunAway deriving (Show)
+-- Define data types for Knight and Monster
+data Knight = Knight { kName :: String, kHealth :: Int, kAttack :: Int, kDefence :: Int, kActions :: [KnightAction] }
+data Monster = Monster { mName :: String, mHealth :: Int, mAttack :: Int, mActions :: [MonsterAction] }
 
--- Define the data type for a knight
-data Knight = Knight {
-  knightHealth :: Int,
-  knightDefense :: Int,
-  knightActions :: [Action]
-} deriving (Show)
+-- Define data types for Knight actions and Monster actions
+data KnightAction = KnightAttack | DrinkPotion | CastSpell
+data MonsterAction = MonsterAttack | RunAway
 
--- Make Knight an instance of the Fighter typeclass
+-- Implement Fighter instance for Knight
 instance Fighter Knight where
-  getHealth = knightHealth
-  applyDamage dmg knight = knight { knightHealth = max 0 (knightHealth knight - dmg + knightDefense knight) }
-  nextAction knight@(Knight _ _ actions) = (knight, head actions)
+    getName = kName
+    getHealth = kHealth
+    getAttack = kAttack
+    performAction knight@(Knight name health attack defence actions) opponent =
+        case cycleActions of
+            (KnightAttack:rest) -> Knight name (health - getOpponentAttack defence opponent) attack defence rest
+            (DrinkPotion:rest) -> Knight name (health + 10) attack defence rest
+            (CastSpell:rest) -> Knight name health attack (defence + 1) rest
+        where 
+            cycleActions = cycle $ actions
+            getOpponentAttack :: Fighter b => Int ->  b -> Int
+            getOpponentAttack defense opponent
+              | defense > getAttack opponent = 0
+              | otherwise = getAttack opponent - defense
 
--- Define the data type for a monster
-data Monster = Monster {
-  monsterHealth :: Int,
-  monsterAttack :: Int,
-  monsterActions :: [Action]
-} deriving (Show)
-
--- Make Monster an instance of the Fighter typeclass
+-- Implement Fighter instance for Monster
 instance Fighter Monster where
-  getHealth = monsterHealth
-  applyDamage dmg monster = monster { monsterHealth = max 0 (monsterHealth monster - dmg) }
-  nextAction monster@(Monster _ _ actions) = (monster, head actions)
+    getName = mName
+    getHealth = mHealth
+    getAttack = mAttack
+    performAction monster@(Monster name health attack actions) opponent =
+        case cycleActions of
+            (MonsterAttack:rest) -> Monster name (health - getAttack opponent) attack rest
+            (RunAway:rest) -> Monster name 0 attack rest
+        where 
+          cycleActions = cycle $ actions
 
--- Function to simulate a battle between two fighters
-battle :: (Fighter a, Fighter b) => a -> b -> Either a b
-battle fighter1 fighter2 = go (cycleActions fighter1) (cycleActions fighter2)
-  where
-    -- Cycle the actions of the fighters indefinitely
-    cycleActions fighter = cycle $ knightActions fighter
-    -- Recursive function to simulate each turn of the battle
-    go f1@(nextAction -> (nf1, action1)) f2@(nextAction -> (nf2, action2))
-      | not (isAlive nf1) = Right nf2
-      | not (isAlive nf2) = Left nf1
-      | otherwise = case action1 of
-          Attack dmg -> go nf1 (applyDamage dmg f2)
-          DrinkPotion amount -> go (nf1 { knightHealth = knightHealth nf1 + amount }) f2
-          CastSpell def -> go (nf1 { knightDefense = knightDefense nf1 + def }) f2
-          RunAway -> Right nf2 -- If the monster runs away, the knight wins
-
--- Example usage:
--- Create a knight with 100 health, 10 defense, and a sequence of actions
-let knight = Knight 100 10 [Attack 20, DrinkPotion 10, CastSpell 5]
--- Create a monster with 120 health, 15 attack, and a sequence of actions
-let monster = Monster 120 15 [Attack 15, RunAway]
--- Simulate the battle
-battle knight monster
+fight :: (Fighter a, Fighter b) => a -> b -> String
+fight fighter1 fighter2
+    | getHealth fighter1 <= 0 = getName fighter2 ++ " wins!"
+    | getHealth fighter2 <= 0 = getName fighter1 ++ " wins!"
+    | otherwise =
+        let fighter1' = performAction fighter1 fighter2
+            fighter2' = performAction fighter2 fighter1
+        in fight fighter2' fighter1'
